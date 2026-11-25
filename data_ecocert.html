@@ -581,13 +581,13 @@ function aggiorna() {
     aggiungiPassaggio(
       "2 · Settimane mancanti",
       numero(r.mancanti) + " settimane",
-      `${numero(r.requisito)} − ${numero(settimane)}`
+      `=${numero(r.requisito)} − ${numero(settimane)}`
     );
 
     aggiungiPassaggio(
       "3 · Data base senza aspettativa di vita",
       dataIt(r.dataBase),
-      `${dataIt(r.dataEcocert)} + ${r.mancanti} × 7 giorni`
+      `=${dataIt(r.dataEcocert)} + ${r.mancanti} × 7 giorni`
     );
 
     const pulsanteInfo = document.createElement("button");
@@ -608,9 +608,9 @@ function aggiorna() {
     );
 
     aggiungiPassaggio(
-      "5 · Data con aspettativa di vita",
+      "5 · Data + aspettativa di vita",
       dataIt(r.dataAspettativa),
-      `${dataIt(r.dataBase)} + ${r.incremento} × 7 giorni`
+      `=${dataIt(r.dataBase)} + ${r.incremento} × 7 giorni`
     );
 
     aggiungiPassaggio(
@@ -620,9 +620,9 @@ function aggiorna() {
     );
 
     aggiungiPassaggio(
-      "7 · Data con aspettativa e finestra",
+      "7 · Data con aspettativa + finestra",
       dataIt(r.dataFinestra),
-      `${dataIt(r.dataAspettativa)} + ${FINESTRA_MESI} mesi`
+      `=${dataIt(r.dataAspettativa)} + ${FINESTRA_MESI} mesi`
     );
 
     aggiungiPassaggio(
