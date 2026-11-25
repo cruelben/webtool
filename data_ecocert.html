@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECOCERT — Data pensione</title>
+
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: #eef3f6;
+  color: #203447;
+  font-family: system-ui, sans-serif;
+  line-height: 1.45;
+}
+main {
+  max-width: 480px;
+  margin: auto;
+  padding: 20px 14px 32px;
+}
+h1 { font-size: 26px; margin: 0 0 6px; }
+header p { margin: 0; color: #617384; font-size: 14px; }
+.card {
+  background: white;
+  border: 1px solid #dce5ec;
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 18px;
+}
+label {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  margin-bottom: 16px;
+}
+label:last-of-type { margin-bottom: 0; }
+input, select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 7px;
+  padding: 12px;
+  border: 1px solid #a3b3bf;
+  border-radius: 9px;
+  background: white;
+  color: #203447;
+  font: inherit;
+  font-size: 16px;
+}
+input:focus, select:focus, .info-btn:focus-visible, .modal-close:focus-visible {
+  outline: 3px solid #a9dbdd;
+  outline-offset: 2px;
+}
+.hero {
+  background: #e3f4ef;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 10px;
+}
+.hero span { font-size: 13px; color: #285e50; }
+.hero strong {
+  display: block;
+  font-size: 32px;
+  color: #075b49;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.calc-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  color: #617384;
+  margin: 4px 0 6px;
+}
+.step { padding: 14px 0; border-bottom: 1px solid #e6edf1; }
+.step:last-child { border-bottom: 0; }
+.step-title { display: block; font-size: 13px; color: #617384; }
+.step-value {
+  display: block;
+  font-size: 19px;
+  font-weight: 650;
+  margin-top: 3px;
+}
+.step small {
+  display: block;
+  color: #617384;
+  font-size: 12px;
+  margin-top: 3px;
+}
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  border: 1px solid #a3b3bf;
+  border-radius: 999px;
+  background: #f5f8fa;
+  color: #203447;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.info-btn:hover { background: #e6edf1; }
+.info-btn:active { background: #dce5ec; }
+#error { color: #9c2232; font-size: 14px; margin: 12px 0 0; }
+#error:empty { display: none; }
+.warning {
+  background: #fff4dc;
+  color: #74511c;
+  padding: 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  margin-top: 14px;
+}
+
+/* --- Popup --- */
+body.modal-open { overflow: hidden; }
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 35, 47, .55);
+}
+.modal-panel {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 85vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 18px 40px rgba(20, 35, 47, .28);
+}
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-head h2 { font-size: 18px; margin: 0; }
+.modal-close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dce5ec;
+  border-radius: 50%;
+  background: #f5f8fa;
+  color: #203447;
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.modal-close:hover { background: #e6edf1; }
+.modal-text { font-size: 14px; color: #3b4f60; margin: 10px 0 0; }
+.table-wrap {
+  margin-top: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.modal-table th {
+  background: #203447;
+  color: #fff;
+  padding: 8px 7px;
+  text-align: right;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.modal-table td {
+  padding: 8px 7px;
+  text-align: right;
+  border-bottom: 1px solid #e1e8ee;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.modal-table th:first-child,
+.modal-table td:first-child { text-align: left; }
+.modal-table tbody tr:nth-child(even) { background: #f5f8fa; }
+.modal-table tr.is-current { background: #e3f4ef; font-weight: 700; }
+.modal-note { color: #617384; font-size: 12px; margin: 12px 0 0; }
+
+[hidden] { display: none !important; }
+@media (max-width: 350px) {
+  .card { padding: 15px; }
+  .hero strong { font-size: 28px; }
+  .modal { padding: 10px; }
+  .modal-panel { padding: 15px; }
+}
+</style>
+</head>
+
+<body>
+<main>
+  <header>
+    <h1>Data pensione anticipata</h1>
+    <p>Calcolo dinamico da ECOCERT</p>
+  </header>
+
+  <section class="card" aria-label="Dati ECOCERT">
+    <label for="weeks">
+      Settimane / marchette ECOCERT
+      <input id="weeks" type="number" min="0" step="1"
+             value="2000" inputmode="numeric" required>
+    </label>
+
+    <label for="reference">
+      Data di riferimento ECOCERT
+      <input id="reference" type="date"
+             value="2026-05-30" required>
+    </label>
+
+    <label for="sex">
+      Sesso
+      <select id="sex">
+        <option value="U">U — Uomo</option>
+        <option value="D">D — Donna</option>
+      </select>
+    </label>
+
+    <p id="error" role="alert"></p>
+  </section>
+
+  <section id="result" class="card"
+           aria-live="polite" aria-atomic="true" hidden>
+    <div class="hero">
+      <span>Data pensione anticipata — arrotondata</span>
+      <strong id="retirement"></strong>
+    </div>
+
+    <span class="calc-title">calcolo della data:</span>
+    <div id="steps"></div>
+    <p id="warning" class="warning" hidden></p>
+  </section>
+</main>
+
+<div id="modal" class="modal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true"
+       aria-labelledby="modal-title" aria-describedby="modal-text">
+    <div class="modal-head">
+      <h2 id="modal-title"></h2>
+      <button id="modal-close" type="button" class="modal-close"
+              data-close aria-label="Chiudi">✕</button>
+    </div>
+    <p id="modal-text" class="modal-text"></p>
+    <div class="table-wrap">
+      <table class="modal-table">
+        <thead>
+          <tr>
+            <th scope="col">Anno</th>
+            <th scope="col">Requisito</th>
+            <th scope="col">Settimane</th>
+            <th scope="col">Incremento</th>
+          </tr>
+        </thead>
+        <tbody id="modal-table-body"></tbody>
+      </table>
+    </div>
+    <p class="modal-note">Riga evidenziata: anno in cui cade la data base.</p>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+// Tabella requisiti (fonte unica dei dati).
+const TABELLA_REQUISITI = [
+  { anno: 2026, U: { testo: "42 anni e 10 mesi", marche: 2227 }, D: { testo: "41 anni e 10 mesi", marche: 2175 } },
+  { anno: 2027, U: { testo: "42 anni e 11 mesi", marche: 2231 }, D: { testo: "41 anni e 11 mesi", marche: 2179 } },
+  { anno: 2028, U: { testo: "43 anni e 1 mese",  marche: 2240 }, D: { testo: "42 anni e 1 mese",  marche: 2188 } },
+  { anno: 2029, U: { testo: "43 anni e 4 mesi",  marche: 2253 }, D: { testo: "42 anni e 4 mesi",  marche: 2201 } },
+  { anno: 2030, U: { testo: "43 anni e 4 mesi",  marche: 2253 }, D: { testo: "42 anni e 4 mesi",  marche: 2201 } },
+  { anno: 2031, U: { testo: "43 anni e 6 mesi",  marche: 2262 }, D: { testo: "42 anni e 6 mesi",  marche: 2210 } },
+  { anno: 2032, U: { testo: "43 anni e 6 mesi",  marche: 2262 }, D: { testo: "42 anni e 6 mesi",  marche: 2210 } },
+  { anno: 2033, U: { testo: "43 anni e 7 mesi",  marche: 2266 }, D: { testo: "42 anni e 7 mesi",  marche: 2214 } },
+  { anno: 2034, U: { testo: "43 anni e 7 mesi",  marche: 2266 }, D: { testo: "42 anni e 7 mesi",  marche: 2214 } }
+];
+
+const ANNO_BASE = 2026;
+const RIGA_BASE = TABELLA_REQUISITI.find(r => r.anno === ANNO_BASE);
+
+// Requisiti base 2026, in settimane (derivati dalla tabella).
+const BASE = { U: RIGA_BASE.U.marche, D: RIGA_BASE.D.marche };
+
+// Incrementi rispetto al 2026 (derivati dalla tabella).
+const INCREMENTI = {};
+for (const riga of TABELLA_REQUISITI) {
+  INCREMENTI[riga.anno] = {
+    U: riga.U.marche - BASE.U,
+    D: riga.D.marche - BASE.D
+  };
+}
+
+const GIORNO = 86400000;
+const FINESTRA_MESI = 3;
+
+const $ = id => document.getElementById(id);
+const numero = n => n.toLocaleString("it-IT");
+
+function dataIt(data) {
+  const giorno = String(data.getUTCDate()).padStart(2, "0");
+  const mese = String(data.getUTCMonth() + 1).padStart(2, "0");
+  return `${giorno}/${mese}/${data.getUTCFullYear()}`;
+}
+
+// UTC evita slittamenti dovuti all'ora legale.
+function aggiungiSettimane(data, settimane) {
+  return new Date(data.getTime() + settimane * 7 * GIORNO);
+}
+
+// Aggiunge mesi di calendario, come EDATE in Excel.
+// Se il giorno non esiste nel mese di arrivo,
+// utilizza l'ultimo giorno di quel mese.
+function aggiungiMesi(data, mesi) {
+  const risultato = new Date(data.getTime());
+  const giornoOriginale = risultato.getUTCDate();
+
+  risultato.setUTCDate(1);
+  risultato.setUTCMonth(risultato.getUTCMonth() + mesi);
+
+  const ultimoGiorno = new Date(risultato.getTime());
+  ultimoGiorno.setUTCMonth(ultimoGiorno.getUTCMonth() + 1);
+  ultimoGiorno.setUTCDate(0);
+
+  risultato.setUTCDate(
+    Math.min(giornoOriginale, ultimoGiorno.getUTCDate())
+  );
+
+  return risultato;
+}
+
+function primoGiornoMeseSuccessivo(data) {
+  const risultato = new Date(data.getTime());
+  risultato.setUTCDate(1);
+  risultato.setUTCMonth(risultato.getUTCMonth() + 1);
+  return risultato;
+}
+
+function calcola(settimane, riferimento, sesso) {
+  if (!Number.isSafeInteger(settimane) || settimane < 0) {
+    throw new Error(
+      "Inserisci un numero intero non negativo di settimane."
+    );
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(BASE, sesso)) {
+    throw new Error("Seleziona U oppure D.");
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(riferimento)) {
+    throw new Error("Inserisci una data valida.");
+  }
+
+  const dataEcocert = new Date(riferimento + "T00:00:00.000Z");
+
+  if (
+    !Number.isFinite(dataEcocert.getTime()) ||
+    dataEcocert.toISOString().slice(0, 10) !== riferimento
+  ) {
+    throw new Error("Inserisci una data valida.");
+  }
+
+  const requisito = BASE[sesso];
+  const mancanti = requisito - settimane;
+
+  if (mancanti < 0) {
+    throw new Error(
+      "Requisito base già superato: occorre verificare " +
+      "separatamente la data storica di maturazione."
+    );
+  }
+
+  const dataBase = aggiungiSettimane(dataEcocert, mancanti);
+  const anno = dataBase.getUTCFullYear();
+
+  if (!Object.prototype.hasOwnProperty.call(INCREMENTI, anno)) {
+    throw new Error(
+      `La data base cade nel ${anno}: ` +
+      "anno fuori dalla tabella 2026–2034."
+    );
+  }
+
+  // Come nel foglio: ricerca sull'anno della data base.
+  const incremento = INCREMENTI[anno][sesso];
+
+  const dataAspettativa = aggiungiSettimane(
+    dataBase,
+    incremento
+  );
+
+  // Aggiornamento: 3 mesi di calendario, non 84 giorni.
+  const dataFinestra = aggiungiMesi(
+    dataAspettativa,
+    FINESTRA_MESI
+  );
+
+  const dataPensione = primoGiornoMeseSuccessivo(dataFinestra);
+
+  return {
+    dataEcocert,
+    requisito,
+    mancanti,
+    dataBase,
+    anno,
+    incremento,
+    dataAspettativa,
+    dataFinestra,
+    dataPensione
+  };
+}
+
+/* ---------- Popup ---------- */
+
+let focusPrecedente = null;
+
+function apriModal(anno, sesso, origine) {
+  const riga = TABELLA_REQUISITI.find(r => r.anno === anno);
+  const dati = riga[sesso];
+  const base = BASE[sesso];
+  const incremento = INCREMENTI[anno][sesso];
+  const soggetto = sesso === "U" ? "gli uomini" : "le donne";
+
+  $("modal-title").textContent = `Aspettativa di vita · anno ${anno}`;
+
+  $("modal-text").textContent =
+    `La data base (punto 3) cade nel ${anno}. ` +
+    `Per ${soggetto} il requisito del ${anno} è di ` +
+    `${numero(dati.marche)} settimane (${dati.testo}), cioè ` +
+    `${numero(incremento)} settimane in più rispetto al requisito base ` +
+    `del ${ANNO_BASE} (${numero(base)} settimane). ` +
+    `Per questo il punto 4 aggiunge ${numero(incremento)} settimane.`;
+
+  const corpo = $("modal-table-body");
+  corpo.replaceChildren();
+
+  for (const r of TABELLA_REQUISITI) {
+    const valori = r[sesso];
+    const tr = document.createElement("tr");
+    if (r.anno === anno) {
+      tr.className = "is-current";
+      tr.setAttribute("aria-current", "true");
+    }
+
+    const celle = [
+      String(r.anno),
+      valori.testo,
+      numero(valori.marche),
+      "+" + numero(valori.marche - base)
+    ];
+
+    for (const testo of celle) {
+      const td = document.createElement("td");
+      td.textContent = testo;
+      tr.append(td);
+    }
+
+    corpo.append(tr);
+  }
+
+  focusPrecedente = origine || null;
+  $("modal").hidden = false;
+  document.body.classList.add("modal-open");
+  $("modal-close").focus();
+}
+
+function chiudiModal() {
+  if ($("modal").hidden) return;
+  $("modal").hidden = true;
+  document.body.classList.remove("modal-open");
+  if (focusPrecedente && document.contains(focusPrecedente)) {
+    focusPrecedente.focus();
+  }
+  focusPrecedente = null;
+}
+
+$("modal").addEventListener("click", evento => {
+  if (evento.target.closest("[data-close]")) chiudiModal();
+});
+
+document.addEventListener("keydown", evento => {
+  if ($("modal").hidden) return;
+
+  if (evento.key === "Escape") {
+    evento.preventDefault();
+    chiudiModal();
+    return;
+  }
+
+  if (evento.key === "Tab") {
+    const focusabili = $("modal").querySelectorAll(
+      'button, a[href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusabili.length === 0) return;
+    const primo = focusabili[0];
+    const ultimo = focusabili[focusabili.length - 1];
+
+    if (evento.shiftKey && document.activeElement === primo) {
+      evento.preventDefault();
+      ultimo.focus();
+    } else if (!evento.shiftKey && document.activeElement === ultimo) {
+      evento.preventDefault();
+      primo.focus();
+    }
+  }
+});
+
+/* ---------- Rendering passaggi ---------- */
+
+function aggiungiPassaggio(titolo, valore, operazione, extra) {
+  const div = document.createElement("div");
+  div.className = "step";
+
+  const label = document.createElement("span");
+  label.className = "step-title";
+  label.textContent = titolo;
+
+  const risultato = document.createElement("span");
+  risultato.className = "step-value";
+  risultato.textContent = valore;
+
+  div.append(label, risultato);
+
+  if (operazione) {
+    const dettaglio = document.createElement("small");
+    dettaglio.textContent = operazione;
+    div.append(dettaglio);
+  }
+
+  if (extra) div.append(extra);
+
+  $("steps").append(div);
+}
+
+function aggiorna() {
+  chiudiModal();
+
+  $("error").textContent = "";
+  $("result").hidden = true;
+  $("steps").replaceChildren();
+  $("warning").hidden = true;
+
+  try {
+    const input = $("weeks").value.trim();
+    const settimane = input === "" ? NaN : Number(input);
+    const sesso = $("sex").value;
+
+    const r = calcola(settimane, $("reference").value, sesso);
+
+    $("retirement").textContent = dataIt(r.dataPensione);
+
+    aggiungiPassaggio(
+      "1 · Requisito base 2026",
+      numero(r.requisito) + " settimane",
+      sesso === "U" ? "Uomo" : "Donna"
+    );
+
+    aggiungiPassaggio(
+      "2 · Settimane mancanti",
+      numero(r.mancanti) + " settimane",
+      `${numero(r.requisito)} − ${numero(settimane)}`
+    );
+
+    aggiungiPassaggio(
+      "3 · Data base senza aspettativa di vita",
+      dataIt(r.dataBase),
+      `${dataIt(r.dataEcocert)} + ${r.mancanti} × 7 giorni`
+    );
+
+    const pulsanteInfo = document.createElement("button");
+    pulsanteInfo.type = "button";
+    pulsanteInfo.className = "info-btn";
+    pulsanteInfo.setAttribute("aria-haspopup", "dialog");
+    pulsanteInfo.setAttribute("aria-controls", "modal");
+    pulsanteInfo.textContent = "Tabella incrementi aspettative di vita";
+    pulsanteInfo.addEventListener("click", () => {
+      apriModal(r.anno, sesso, pulsanteInfo);
+    });
+
+    aggiungiPassaggio(
+      `4 · Aspettativa di vita · anno ${r.anno}`,
+      "+" + r.incremento + " settimane",
+      "Incremento scelto sull’anno della data base",
+      pulsanteInfo
+    );
+
+    aggiungiPassaggio(
+      "5 · Data con aspettativa di vita",
+      dataIt(r.dataAspettativa),
+      `${dataIt(r.dataBase)} + ${r.incremento} × 7 giorni`
+    );
+
+    aggiungiPassaggio(
+      "6 · Finestra",
+      FINESTRA_MESI + " mesi",
+      "Mesi di calendario, non settimane"
+    );
+
+    aggiungiPassaggio(
+      "7 · Data con aspettativa e finestra",
+      dataIt(r.dataFinestra),
+      `${dataIt(r.dataAspettativa)} + ${FINESTRA_MESI} mesi`
+    );
+
+    aggiungiPassaggio(
+      "8 · Data pensione anticipata",
+      dataIt(r.dataPensione),
+      "Primo giorno del mese successivo alla data con finestra"
+    );
+
+    if (r.dataAspettativa.getUTCFullYear() !== r.anno) {
+      $("warning").hidden = false;
+      $("warning").textContent =
+        `La data con aspettativa cade nel ` +
+        `${r.dataAspettativa.getUTCFullYear()}. ` +
+        `Come nel foglio, l’incremento resta quello del ${r.anno}: ` +
+        "verificare il requisito se cambia nel nuovo anno.";
+    }
+
+    $("result").hidden = false;
+
+  } catch (errore) {
+    $("error").textContent = errore.message;
+  }
+}
+
+$("weeks").addEventListener("input", aggiorna);
+$("reference").addEventListener("input", aggiorna);
+$("sex").addEventListener("change", aggiorna);
+
+aggiorna();
+</script>
+</body>
+</html>
