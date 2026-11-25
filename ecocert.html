@@ -221,6 +221,20 @@ body.modal-open { overflow: hidden; }
 
 .modal-note { color: #617384; font-size: 12px; margin: 12px 0 0; }
 
+/* Stile per gli input dentro il popup */
+.cal-inputs {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e1e8ee;
+}
+.cal-inputs label {
+  margin-bottom: 12px;
+}
+.cal-inputs label:last-of-type {
+  margin-bottom: 0;
+}
+#modal-calendar-error { margin-top: 14px; margin-bottom: 0; }
+
 [hidden] { display: none !important; }
 @media (max-width: 350px) {
   .card { padding: 15px; }
@@ -262,18 +276,6 @@ body.modal-open { overflow: hidden; }
     <p id="error" role="alert"></p>
   </section>
 
-  <section class="card" aria-label="Calendario periodi">
-    <label for="data-uscita">
-      Ultimo giorno in azienda
-      <input id="data-uscita" type="date" value="2026-12-31" required>
-    </label>
-    <label for="mesi-preavviso">
-      Preavviso pagato (mesi)
-      <input id="mesi-preavviso" type="number" min="0" step="1"
-             value="4" inputmode="numeric" required>
-    </label>
-  </section>
-
   <section id="result" class="card"
            aria-live="polite" aria-atomic="true" hidden>
     <div class="hero">
@@ -289,6 +291,7 @@ body.modal-open { overflow: hidden; }
 
     <span class="calc-title">calcolo della data:</span>
     <div id="steps"></div>
+    <!-- L'elemento #warning rimane ma non verrà più popolato da quel messaggio -->
     <p id="warning" class="warning" hidden></p>
   </section>
 </main>
@@ -329,7 +332,23 @@ body.modal-open { overflow: hidden; }
       <button id="modal-calendar-close" type="button" class="modal-close"
               data-close-calendar aria-label="Chiudi">✕</button>
     </div>
+    
     <p id="modal-calendar-summary" class="modal-text"></p>
+    
+    <div class="cal-inputs">
+      <label for="data-uscita">
+        Ultimo giorno in azienda
+        <input id="data-uscita" type="date" value="2026-12-31" required>
+      </label>
+      <label for="mesi-preavviso">
+        Preavviso pagato (mesi)
+        <input id="mesi-preavviso" type="number" min="0" step="1"
+               value="4" inputmode="numeric" required>
+      </label>
+    </div>
+
+    <p id="modal-calendar-error" class="warning" hidden></p>
+
     <div class="table-wrap">
       <table class="modal-table calendar-table">
         <thead>
@@ -535,7 +554,6 @@ function calcolaCalendarioPeriodi(dataUscita, mesiPreavviso, dataPensione) {
       mesi: mesiFinestra
   });
 
-  // FIX: Calcolo gap totale sommando esattamente i mesi di ogni periodo
   const gapMesi = periodi.reduce((acc, p) => acc + p.mesi, 0);
 
   return { periodi, gapMesi, inizioPensione: dataPensione, warning };
@@ -605,12 +623,7 @@ function aggiorna() {
     aggiungiPassaggio("7 · Data con aspettativa + finestra", dataIt(r.dataFinestra), `=${dataIt(r.dataAspettativa)} + ${FINESTRA_MESI} mesi`);
     aggiungiPassaggio("8 · Data pensione anticipata", dataIt(r.dataPensione), "Primo giorno del mese successivo alla data con finestra");
 
-    if (r.dataAspettativa.getUTCFullYear() !== r.anno) {
-      $("warning").hidden = false;
-      $("warning").textContent =
-        `La data con aspettativa cade nel ${r.dataAspettativa.getUTCFullYear()}. ` +
-        `Come nel foglio, l'incremento resta quello del ${r.anno}: verificare il requisito se cambia nel nuovo anno.`;
-    }
+    // L'avviso testuale alla fine della schermata è stato rimosso.
 
     $("result").hidden = false;
   } catch (errore) {
@@ -694,91 +707,99 @@ function formatMesiTotali(mesi) {
 }
 
 function apriCalendario(origine) {
-  if (!ultimoRisultato) {
-    throw new Error("Calcola prima la data di pensione.");
+  if (!ultimoRisultato) return; 
+
+  if ($("modal-calendar").hidden) {
+    focusCalendario = origine || null;
+    $("modal-calendar").hidden = false;
+    document.body.classList.add("modal-open");
+    if (origine) $("modal-calendar-close").focus();
   }
 
   const dataUscita = parseDataInput($("data-uscita").value);
   const preavvisoRaw = $("mesi-preavviso").value.trim();
   const mesiPreavviso = preavvisoRaw === "" ? NaN : Number(preavvisoRaw);
 
-  const r = calcolaCalendarioPeriodi(
-    dataUscita, mesiPreavviso, ultimoRisultato.dataPensione
-  );
+  try {
+    const r = calcolaCalendarioPeriodi(
+      dataUscita, mesiPreavviso, ultimoRisultato.dataPensione
+    );
+    
+    $("modal-calendar-error").hidden = true;
 
-  const corpo = $("modal-calendar-body");
-  corpo.replaceChildren();
+    const corpo = $("modal-calendar-body");
+    corpo.replaceChildren();
 
-  // Riga: ultimo giorno in azienda
-  {
-    const tr = document.createElement("tr");
-    tr.className = "cal-row-input";
-    const td0 = document.createElement("td");
-    td0.textContent = "Ultimo giorno in azienda";
-    const td1 = document.createElement("td");
-    td1.textContent = "";
-    const td2 = document.createElement("td");
-    td2.textContent = "";
-    const td3 = document.createElement("td");
-    td3.textContent = dataIt(dataUscita);
-    tr.append(td0, td1, td2, td3);
-    corpo.append(tr);
-  }
+    {
+      const tr = document.createElement("tr");
+      tr.className = "cal-row-input";
+      const td0 = document.createElement("td");
+      td0.textContent = "Ultimo giorno in azienda";
+      const td1 = document.createElement("td");
+      td1.textContent = "";
+      const td2 = document.createElement("td");
+      td2.textContent = "";
+      const td3 = document.createElement("td");
+      td3.textContent = dataIt(dataUscita);
+      tr.append(td0, td1, td2, td3);
+      corpo.append(tr);
+    }
 
-  // Righe periodi
-  for (const p of r.periodi) {
-    const tr = document.createElement("tr");
-    if (p.mesi === 0) tr.className = "cal-row-empty";
+    for (const p of r.periodi) {
+      const tr = document.createElement("tr");
+      if (p.mesi === 0) tr.className = "cal-row-empty";
 
-    const tdNome = document.createElement("td");
-    tdNome.textContent = p.nome;
+      const tdNome = document.createElement("td");
+      tdNome.textContent = p.nome;
 
-    const tdMesi = document.createElement("td");
-    tdMesi.className = "col-mesi";
-    tdMesi.textContent = String(p.mesi);
+      const tdMesi = document.createElement("td");
+      tdMesi.className = "col-mesi";
+      tdMesi.textContent = String(p.mesi);
 
-    const tdDa = document.createElement("td");
-    tdDa.textContent = p.da ? dataIt(p.da) : "—";
+      const tdDa = document.createElement("td");
+      tdDa.textContent = p.da ? dataIt(p.da) : "—";
 
-    const tdA = document.createElement("td");
-    tdA.textContent = p.a ? dataIt(p.a) : "—";
+      const tdA = document.createElement("td");
+      tdA.textContent = p.a ? dataIt(p.a) : "—";
 
-    tr.append(tdNome, tdMesi, tdDa, tdA);
-    corpo.append(tr);
-  }
+      tr.append(tdNome, tdMesi, tdDa, tdA);
+      corpo.append(tr);
+    }
 
-  // Riga: inizio pensione (totale)
-  {
-    const tr = document.createElement("tr");
-    tr.className = "cal-row-total";
-    const td0 = document.createElement("td");
-    td0.textContent = "Inizio pensione";
-    const td1 = document.createElement("td");
-    td1.className = "col-mesi";
-    td1.textContent = String(r.gapMesi);
-    const td2 = document.createElement("td");
-    td2.textContent = "";
-    const td3 = document.createElement("td");
-    td3.textContent = dataIt(r.inizioPensione);
-    tr.append(td0, td1, td2, td3);
-    corpo.append(tr);
-  }
+    {
+      const tr = document.createElement("tr");
+      tr.className = "cal-row-total";
+      const td0 = document.createElement("td");
+      td0.textContent = "Inizio pensione";
+      const td1 = document.createElement("td");
+      td1.className = "col-mesi";
+      td1.textContent = String(r.gapMesi);
+      const td2 = document.createElement("td");
+      td2.textContent = "";
+      const td3 = document.createElement("td");
+      td3.textContent = dataIt(r.inizioPensione);
+      tr.append(td0, td1, td2, td3);
+      corpo.append(tr);
+    }
 
-  $("modal-calendar-summary").textContent =
-    `Mancano in totale: ${formatMesiTotali(r.gapMesi)} (${r.gapMesi} mesi).`;
+    $("modal-calendar-summary").textContent =
+      `Mancano in totale: ${formatMesiTotali(r.gapMesi)} (${r.gapMesi} mesi).`;
 
-  if (r.warning) {
-    $("modal-calendar-warning").hidden = false;
-    $("modal-calendar-warning").textContent = "⚠ " + r.warning;
-  } else {
+    if (r.warning) {
+      $("modal-calendar-warning").hidden = false;
+      $("modal-calendar-warning").textContent = "⚠ " + r.warning;
+    } else {
+      $("modal-calendar-warning").hidden = true;
+      $("modal-calendar-warning").textContent = "";
+    }
+
+  } catch (e) {
+    $("modal-calendar-error").hidden = false;
+    $("modal-calendar-error").textContent = e.message;
+    $("modal-calendar-body").replaceChildren();
+    $("modal-calendar-summary").textContent = "";
     $("modal-calendar-warning").hidden = true;
-    $("modal-calendar-warning").textContent = "";
   }
-
-  focusCalendario = origine || null;
-  $("modal-calendar").hidden = false;
-  document.body.classList.add("modal-open");
-  $("modal-calendar-close").focus();
 }
 
 function chiudiCalendario() {
@@ -833,12 +854,7 @@ document.addEventListener("keydown", evento => {
 });
 
 $("btn-calendar").addEventListener("click", evento => {
-  try {
-    apriCalendario(evento.currentTarget);
-  } catch (e) {
-    $("warning").hidden = false;
-    $("warning").textContent = "Calendario non disponibile: " + e.message;
-  }
+  apriCalendario(evento.currentTarget);
 });
 
 $("weeks").addEventListener("input", aggiorna);
@@ -846,14 +862,10 @@ $("reference").addEventListener("input", aggiorna);
 $("sex").addEventListener("change", aggiorna);
 
 $("data-uscita").addEventListener("input", () => {
-  if (!$("modal-calendar").hidden) {
-    try { apriCalendario($("btn-calendar")); } catch (e) { /* ignore */ }
-  }
+  if (!$("modal-calendar").hidden) apriCalendario();
 });
 $("mesi-preavviso").addEventListener("input", () => {
-  if (!$("modal-calendar").hidden) {
-    try { apriCalendario($("btn-calendar")); } catch (e) { /* ignore */ }
-  }
+  if (!$("modal-calendar").hidden) apriCalendario();
 });
 
 aggiorna();
